@@ -43,7 +43,7 @@ jobs:
           echo "CHART_VERSION=$CHART_VERSION" >> $GITHUB_ENV
 
       - name: Create Helm Chart Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag_version.outputs.new_tag }}
           files: |
