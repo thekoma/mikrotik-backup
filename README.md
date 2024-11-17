@@ -34,7 +34,7 @@ By default, it uses the `latest` tag, but you can specify a version in your `doc
 ```yaml
 services:
   mikrotik-backup:
-    image: ghcr.io/thekoma/mikrotik-backup/app:2024.11.5  # Replace with desired version
+    image: ghcr.io/thekoma/mikrotik-backup/app:v2024.11.5  # Replace with desired version
     # ... rest of the configuration
 ```
 
@@ -49,7 +49,7 @@ helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts --vers
 
 For example, to install version 2024.11.6:
 ```bash
-helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts --version 2024.11.6
+helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts --version v2024.11.6
 ```
 
 > **Note**: The version follows the format `YYYY.MM.RELEASE` where:
