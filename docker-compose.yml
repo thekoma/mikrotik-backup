@@ -1,0 +1,19 @@
+services:
+  mikrotik-backup:
+    image: ghcr.io/thekoma/mikrotik-backup:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./config.toml:/app/config.toml:ro
+      - ./mikrotik-rsa:/mikrotik-rsa:ro
+    environment:
+      - TZ=Europe/Rome
+    command: [
+      "python", "/app/backup.py",
+      "--mode", "daemon",
+      "--times", "02:00", "10:00", "18:00",
+      "--jobs", "4",
+      "--key", "/mikrotik-rsa"
+    ]
+    restart: unless-stopped

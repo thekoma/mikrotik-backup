@@ -1,0 +1,51 @@
+{{- if eq .Values.mode "cronjob" }}
+{{- range .Values.backup.times }}
+{{- $time := . }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "mikrotik-backup.fullname" $ }}-{{ replace ":" "" $time }}
+  labels:
+    {{- include "mikrotik-backup.labels" $ | nindent 4 }}
+spec:
+  schedule: "{{ (split ":" $time)._0 }} {{ (split ":" $time)._1 }} * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: {{ $.Chart.Name }}
+              image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+              imagePullPolicy: {{ $.Values.image.pullPolicy }}
+              args:
+                - "python"
+                - "/app/backup.py"
+                - "--jobs"
+                - {{ $.Values.backup.jobs | quote }}
+                - "--key"
+                - "/mikrotik-rsa"
+              env:
+                - name: TZ
+                  value: {{ $.Values.timezone }}
+              volumeMounts:
+                - name: config
+                  mountPath: /app/config.toml
+                  subPath: config.toml
+                - name: ssh-key
+                  mountPath: /mikrotik-rsa
+                  subPath: mikrotik-rsa
+              resources:
+                {{- toYaml $.Values.resources | nindent 16 }}
+          volumes:
+            - name: config
+              configMap:
+                name: {{ $.Values.volumes.config.name }}
+            - name: ssh-key
+              secret:
+                secretName: {{ $.Values.volumes.ssh.name }}
+                defaultMode: 0600
+          restartPolicy: OnFailure
+---
+{{- end }}
+{{- end }} 

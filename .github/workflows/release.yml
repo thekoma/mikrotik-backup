@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main  # Trigger on pushes to main
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12' # Match your Dockerfile
+
+      - name: Install dependencies
+        run: pip install boto3 paramiko colorama tomli schedule
+
+      - name: Increment version and tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          default_bump: patch # Increment patch version by default
+          pre_release_tag: beta # Add "beta" tag for pre-releases (optional)
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t ghcr.io/thekoma/mikrotik-backup:${{ steps.tag_version.outputs.new_tag }} .
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker push ghcr.io/thekoma/mikrotik-backup:${{ steps.tag_version.outputs.new_tag }}
+
+      - name: Package Helm Chart
+        id: package-chart
+        run: |
+          helm package charts/mikrotik-backup
+          CHART_VERSION=$(helm show chart charts/mikrotik-backup-*.tgz | grep version | awk '{print $2}')
+          echo "::set-output name=chart_version::$CHART_VERSION"
+
+      - name: Create Helm Chart Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.tag_version.outputs.new_tag }}
+          release_name: Release ${{ steps.tag_version.outputs.new_tag }}
+          asset_path: ./mikrotik-backup-${{ steps.package-chart.outputs.chart_version }}.tgz
+          asset_name: mikrotik-backup-${{ steps.package-chart.outputs.chart_version }}.tgz
+          asset_content_type: application/x-gzip 

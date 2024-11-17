@@ -1,0 +1,80 @@
+# Application-specific configuration
+deploymentMode: "cronjob" # "daemon" or "cronjob"
+
+# Backup configuration
+backup:
+  times: ["02:00", "10:00", "18:00"]
+  jobs: 4
+  format: "plain"  # or "json"
+  localDir: "/tmp/mikrotik_backups"
+
+# SSH configuration
+ssh:
+  username: "backup"
+  keyPath: "/mikrotik-rsa"
+  # Existing secret containing SSH key
+  existingSecret: ""
+  secretKey: "ssh-private-key"
+  # Provide the key directly (base64 encoded) or use an existing secret
+  key: "" # Base64 encoded SSH private key (used if existingSecret is empty)
+
+# Storage configuration (S3-compatible)
+storage:
+  type: "wasabi"
+  bucket: "mikrotik-bck"
+  endpoint: "https://s3.wasabisys.com"
+  # Credentials can be provided directly or via existing secret
+  credentials:
+    existingSecret: ""  # Nome della secret esistente
+    accessKeyKey: "access-key"  # Chiave nella secret per access key
+    secretKeyKey: "secret-key"  # Chiave nella secret per secret key
+    # Direct credentials (ignored if existingSecret is set)
+    accessKey: ""
+    secretKey: ""
+
+# Device configuration
+devices:
+  routers: []  # List of router IPs
+
+# Retention configuration
+retention:
+  daily: 30
+  monthly: 12
+  yearly: 5
+
+# Timezone configuration
+timezone: "Europe/Rome"
+
+# Generic Kubernetes configuration
+image:
+  repository: ghcr.io/thekoma/mikrotik-backup
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+securityContext: {}
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

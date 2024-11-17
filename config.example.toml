@@ -1,0 +1,45 @@
+[storage]
+# Configurazione storage S3-compatible
+type = "wasabi"  # Tipo di storage (opzionale)
+bucket = "mikrotik-bck"
+endpoint = "https://s3.wasabisys.com"
+access_key = "YOUR_ACCESS_KEY"
+secret_key = "YOUR_SECRET_KEY"
+
+[devices]
+# Lista degli indirizzi IP dei router da backuppare
+routers = [
+    "192.168.1.1"
+]
+
+# Configurazione SSH
+[ssh]
+# Username per la connessione SSH (default: "backup")
+username = "backup"
+# Percorso della chiave SSH privata (default: "/root/.ssh/mikrotik_rsa")
+key_path = "/root/.ssh/mikrotik_rsa"
+
+# Configurazione backup
+[backup]
+# Directory locale temporanea per i backup (default: "/tmp/mikrotik_backups")
+local_dir = "/tmp/mikrotik_backups"
+# Nome del file di backup binario sul router (default: "backup.rsc")
+filename = "backup.rsc"
+# Formato dell'export della configurazione: "plain" o "json" (default: "plain")
+format = "plain"
+# Numero di job paralleli (default: 2 * CPU cores)
+jobs = 4
+
+# Configurazione retention
+[retention]
+# Numero di backup giornalieri da mantenere (default: 30)
+daily = 30
+# Numero di backup mensili da mantenere (default: 12)
+monthly = 12
+# Numero di backup annuali da mantenere (default: 5)
+yearly = 5
+
+# Configurazione logging
+[logging]
+# Livello di logging: debug, info, warning, error (default: "info")
+level = "info"

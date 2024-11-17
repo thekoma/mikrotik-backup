@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mikrotik-backup.fullname" . }}-config
+  labels:
+    {{- include "mikrotik-backup.labels" . | nindent 4 }}
+data:
+  config.toml: |
+    [ssh]
+    username = "{{ .Values.ssh.username }}"
+    key_path = "{{ .Values.ssh.keyPath }}"
+
+    [backup]
+    local_dir = "{{ .Values.backup.localDir }}"
+    format = "{{ .Values.backup.format }}"
+
+    [storage]
+    type = "{{ .Values.storage.type }}"
+    bucket = "{{ .Values.storage.bucket }}"
+    endpoint = "{{ .Values.storage.endpoint }}"
+    {{- if not .Values.storage.credentials.existingSecret }}
+    access_key = "{{ .Values.storage.credentials.accessKey }}"
+    secret_key = "{{ .Values.storage.credentials.secretKey }}"
+    {{- end }}
+
+    [retention]
+    daily = {{ .Values.retention.daily }}
+    monthly = {{ .Values.retention.monthly }}
+    yearly = {{ .Values.retention.yearly }}
+
+    [devices]
+    routers = [
+      {{- range .Values.devices.routers }}
+      "{{ . }}",
+      {{- end }}
+    ] 
