@@ -1,6 +1,6 @@
 services:
   mikrotik-backup:
-    image: ghcr.io/thekoma/mikrotik-backup/app:v2024.11.4
+    image: ghcr.io/thekoma/mikrotik-backup/app:v2024.11.6
     build:
       context: .
       dockerfile: Dockerfile

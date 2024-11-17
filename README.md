@@ -47,9 +47,9 @@ For Kubernetes deployments, a Helm Chart is available as an OCI artifact. You ca
 helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts --version <version>
 ```
 
-For example, to install version 2024.11.5:
+For example, to install version 2024.11.6:
 ```bash
-helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts --version 2024.11.5
+helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts --version 2024.11.6
 ```
 
 > **Note**: The version follows the format `YYYY.MM.RELEASE` where:
