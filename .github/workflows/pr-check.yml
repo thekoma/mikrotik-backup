@@ -1,0 +1,82 @@
+name: PR Check
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.gitignore'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff black pylint bandit safety
+
+      - name: Check Python formatting with Black
+        run: black --check .
+
+      - name: Lint with Ruff
+        run: ruff check .
+
+      - name: Security check with Bandit
+        run: bandit -r . -c pyproject.toml
+
+      - name: Check dependencies for known vulnerabilities
+        run: safety check
+
+  helm-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.13.2
+
+      - name: Lint Helm Chart
+        run: helm lint charts/mikrotik-backup/
+
+      - name: Run Helm Template
+        run: |
+          helm template charts/mikrotik-backup/ > test-manifests.yaml
+          if [ $? -ne 0 ]; then
+            echo "Helm template generation failed"
+            exit 1
+          fi
+
+      - name: Validate Kubernetes manifests
+        uses: instrumenta/kubeval-action@master
+        with:
+          files: test-manifests.yaml
+
+  docker-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t test-image .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'test-image'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH' 

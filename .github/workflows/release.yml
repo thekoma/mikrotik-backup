@@ -89,6 +89,8 @@ jobs:
 
       - name: Generate Release Notes
         run: |
+          # Remove 'v' prefix for version number
+          VERSION_WITHOUT_V="${VERSION#v}"
           cat << EOF > release_notes.md
           ## 🚀 Release ${{ env.VERSION }}
 
@@ -119,7 +121,7 @@ jobs:
           #### Kubernetes with Helm
           \`\`\`bash
           # Install using Helm
-          helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts --version ${{ env.VERSION#v }}
+          helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts --version ${VERSION_WITHOUT_V}
           \`\`\`
 
           #### Systemd Service
