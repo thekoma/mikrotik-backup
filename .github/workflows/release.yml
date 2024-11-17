@@ -87,10 +87,62 @@ jobs:
           registry_password: ${{ secrets.GITHUB_TOKEN }}
           update_dependencies: 'true'
 
+      - name: Generate Release Notes
+        run: |
+          cat << EOF > release_notes.md
+          ## 🚀 Release ${{ env.VERSION }}
+
+          ### 📦 Container Images
+          The following multi-architecture container images are available:
+          - \`ghcr.io/thekoma/mikrotik-backup/app:${{ env.VERSION }}\` (recommended for production)
+          - \`ghcr.io/thekoma/mikrotik-backup/app:latest\` (latest version)
+
+          Supported architectures:
+          - linux/amd64 (Intel/AMD 64-bit)
+          - linux/arm64 (ARM 64-bit)
+          - linux/arm/v7 (ARM 32-bit)
+
+          ### 📋 Installation Examples
+
+          #### Docker Compose
+          \`\`\`yaml
+          services:
+            mikrotik-backup:
+              image: ghcr.io/thekoma/mikrotik-backup/app:${{ env.VERSION }}
+              volumes:
+                - ./config.toml:/app/config.toml:ro
+                - ./mikrotik-rsa:/mikrotik-rsa:ro
+              environment:
+                - TZ=Europe/Rome
+          \`\`\`
+
+          #### Kubernetes with Helm
+          \`\`\`bash
+          # Install using Helm
+          helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts --version ${{ env.VERSION#v }}
+          \`\`\`
+
+          #### Systemd Service
+          \`\`\`ini
+          [Unit]
+          Description=Mikrotik Backup Service
+
+          [Service]
+          ExecStart=/usr/local/bin/mikrotik-backup
+          User=mikrotik-backup
+          WorkingDirectory=/etc/mikrotik-backup
+
+          [Install]
+          WantedBy=multi-user.target
+          \`\`\`
+
+          For more detailed installation and configuration instructions, please refer to the [README](https://github.com/thekoma/mikrotik-backup#readme).
+          EOF
+
       - name: Create Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.VERSION }}
           name: Release ${{ env.VERSION }}
-          generate_release_notes: true
+          body_path: release_notes.md
