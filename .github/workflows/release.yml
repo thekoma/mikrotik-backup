@@ -119,11 +119,11 @@ jobs:
           VERSION_WITHOUT_V="${VERSION#v}"
           
           # Update README.md
-          sed -i "s/\(image: ghcr\.io\/thekoma\/mikrotik-backup\/app:\)[0-9]\{4\}\.[0-9]\{2\}\.[0-9]\+/\1${VERSION_WITHOUT_V}/g" README.md
+          sed -i "s/\(image: ghcr\.io\/thekoma\/mikrotik-backup\/app:\)v[0-9]\{4\}\.[0-9]\{2\}\.[0-9]\+/\1${VERSION}/g" README.md
           sed -i "s/\(version \)[0-9]\{4\}\.[0-9]\{2\}\.[0-9]\+/\1${VERSION_WITHOUT_V}/g" README.md
           
           # Update docker-compose.yml
-          sed -i "s/\(image: ghcr\.io\/thekoma\/mikrotik-backup\/app:\)[0-9]\{4\}\.[0-9]\{2\}\.[0-9]\+/\1${VERSION_WITHOUT_V}/g" docker-compose.yml
+          sed -i "s/\(image: ghcr\.io\/thekoma\/mikrotik-backup\/app:\)v[0-9]\{4\}\.[0-9]\{2\}\.[0-9]\+/\1${VERSION}/g" docker-compose.yml
 
       - name: Commit Version Updates
         if: success()
