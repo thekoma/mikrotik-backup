@@ -16,6 +16,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Needed for git history
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -40,7 +42,11 @@ jobs:
             RELEASE_NUMBER=0
           fi
           # Set VERSION environment variable
-          echo "VERSION=v$CURRENT_DATE.$RELEASE_NUMBER" >> $GITHUB_ENV
+          VERSION="v$CURRENT_DATE.$RELEASE_NUMBER"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          # Update Chart.yaml with new version
+          sed -i "s/^version:.*$/version: ${VERSION#v}/" charts/mikrotik-backup/Chart.yaml
+          sed -i "s/^appVersion:.*$/appVersion: \"${VERSION#v}\"/" charts/mikrotik-backup/Chart.yaml
 
       - name: Build and push Docker image
         run: |
@@ -51,16 +57,23 @@ jobs:
       - name: Login to GitHub Container Registry
         run: echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Push Helm Chart to OCI Registry
-        uses: sigstore/helm-push@v1.2.0
+      - name: Chart | Push
+        uses: appany/helm-oci-chart-releaser@v0.3.0
         with:
-          chart: charts/mikrotik-backup
-          version: ${{ env.VERSION }}
-          repository: ghcr.io/thekoma/mikrotik-backup-chart
+          name: mikrotik-backup
+          repository: thekoma
+          tag: ${{ env.VERSION }}
+          app_version: ${{ env.VERSION }}
+          path: charts/mikrotik-backup
+          registry: ghcr.io
+          registry_username: ${{ github.actor }}
+          registry_password: ${{ secrets.GITHUB_TOKEN }}
+          update_dependencies: 'true'
 
-      - name: Create Release (Optional)
+      - name: Create Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.VERSION }}
           name: Release ${{ env.VERSION }}
+          generate_release_notes: true
