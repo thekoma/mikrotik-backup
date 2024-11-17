@@ -47,7 +47,7 @@ timezone: "Europe/Rome"
 
 # Generic Kubernetes configuration
 image:
-  repository: ghcr.io/thekoma/mikrotik-backup
+  repository: ghcr.io/thekoma/mikrotik-backup/app
   tag: ""
   pullPolicy: IfNotPresent
 

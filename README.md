@@ -23,20 +23,41 @@ This project provides a Python script to automate backups of Mikrotik devices an
 
 ### 1. Docker Compose
 
-The simplest way to run the script is using Docker Compose.
+The simplest way to run the script is using Docker Compose. The image will be pulled from GitHub Container Registry:
 
 ```bash
 docker-compose up -d
 ```
 
+By default, it uses the `latest` tag, but you can specify a version in your `docker-compose.yml`:
+
+```yaml
+services:
+  mikrotik-backup:
+    image: ghcr.io/thekoma/mikrotik-backup/app:2024.03.0  # Replace with desired version
+    # ... rest of the configuration
+```
+
 ### 2. Helm Chart for Kubernetes
 
-For Kubernetes deployments, a Helm Chart is available. The chart will automatically use the latest released version from the GitHub Container Registry.
+For Kubernetes deployments, a Helm Chart is available as an OCI artifact. You can install it directly from GitHub Container Registry:
 
 ```bash
-helm repo add mikrotik-backup https://<your-repo>/mikrotik-backup
-helm install mikrotik-backup mikrotik-backup/mikrotik-backup
+# Add the repository
+helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts --version <version>
 ```
+
+For example, to install version 2024.03.0:
+```bash
+helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts --version 2024.03.0
+```
+
+> **Note**: The version follows the format `YYYY.MM.RELEASE` where:
+> - `YYYY`: Current year
+> - `MM`: Current month
+> - `RELEASE`: Release number for the current month (starting from 0)
+
+The container image is automatically pulled from `ghcr.io/thekoma/mikrotik-backup/app` with the matching version tag.
 
 #### Configuration via `values.yaml`
 
