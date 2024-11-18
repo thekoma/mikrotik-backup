@@ -49,7 +49,7 @@ helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts --vers
 
 For example, to install version 2024.11.8:
 ```bash
-helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts --version v2024.11.6
+helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts/mikrotik-backup --version v2024.11.6
 ```
 
 > **Note**: The version follows the format `YYYY.MM.RELEASE` where:
