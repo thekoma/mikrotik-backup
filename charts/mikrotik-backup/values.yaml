@@ -12,22 +12,19 @@ backup:
 ssh:
   username: "backup"
   keyPath: "/mikrotik-rsa"
-  # Existing secret containing SSH key
+  # Existing secret containing SSH credentials
   existingSecret: ""
-  secretKey: "ssh-private-key"
-  # Provide the key directly (base64 encoded) or use an existing secret
-  key: "" # Base64 encoded SSH private key (used if existingSecret is empty)
+  # Direct credentials (ignored if existingSecret is set)
+  key: ""
 
 # Storage configuration (S3-compatible)
 storage:
   type: "wasabi"
   bucket: "mikrotik-bck"
   endpoint: "https://s3.wasabisys.com"
-  # Credentials can be provided directly or via existing secret
   credentials:
-    existingSecret: ""  # Nome della secret esistente
-    accessKeyKey: "access-key"  # Chiave nella secret per access key
-    secretKeyKey: "secret-key"  # Chiave nella secret per secret key
+    # Existing secret containing S3 credentials
+    existingSecret: ""
     # Direct credentials (ignored if existingSecret is set)
     accessKey: ""
     secretKey: ""
@@ -48,7 +45,7 @@ timezone: "Europe/Rome"
 # Generic Kubernetes configuration
 image:
   repository: ghcr.io/thekoma/mikrotik-backup/app
-  tag: ""
+  tag: "latest"
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
@@ -73,7 +70,7 @@ resources:
     memory: 256Mi
   requests:
     cpu: 100m
-    memory: 128Mi
+    memory: 64Mi
 
 nodeSelector: {}
 tolerations: []

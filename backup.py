@@ -393,7 +393,32 @@ def get_backup_statistics(s3_client, bucket_name):
     except Exception as e:
         print(f"Error while retrieving statistics: {e}")
 
-
+def get_config_value(config_dict, *keys, env_var=None, required=True):
+    """
+    Get configuration value from nested dict, falling back to environment variable.
+    """
+    # Try to get from config
+    value = config_dict
+    for key in keys:
+        if isinstance(value, dict) and key in value:
+            value = value[key]
+        else:
+            value = None
+            break
+    
+    # If not in config, try environment
+    if value is None and env_var:
+        value = os.environ.get(env_var)
+    
+    # If required and still not found, raise error
+    if value is None and required:
+        config_path = '.'.join(keys)
+        error_msg = f"Required configuration '{config_path}' not found in config file"
+        if env_var:
+            error_msg += f" or environment variable {env_var}"
+        raise ValueError(error_msg)
+    
+    return value
 
 def main():
     try:

@@ -3,3 +3,24 @@ mikrotik
 mikrotik.pub
 venv
 .env
+
+# Helm test values with credentials
+values-all-in-one.yaml
+values-with-existing-secret.yaml
+existing-secret.yaml
+
+# Other sensitive files
+**/credentials.yaml
+**/secrets.yaml
+**/*secret*.yaml
+**/*credential*.yaml
+
+# Except template files
+!**/templates/secret.yaml
+!**/templates/config-secret.yaml
+
+# Local development files
+.env
+*.key
+*.pem
+*.rsa

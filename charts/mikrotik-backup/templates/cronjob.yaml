@@ -39,11 +39,11 @@ spec:
                 {{- toYaml $.Values.resources | nindent 16 }}
           volumes:
             - name: config
-              configMap:
-                name: {{ $.Values.volumes.config.name }}
+              secret:
+                secretName: {{ include "mikrotik-backup.fullname" $ }}-config
             - name: ssh-key
               secret:
-                secretName: {{ $.Values.volumes.ssh.name }}
+                secretName: {{ include "mikrotik-backup.sshSecretName" $ }}
                 defaultMode: 0600
           restartPolicy: OnFailure
 ---
