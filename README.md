@@ -34,7 +34,7 @@ By default, it uses the `latest` tag, but you can specify a version in your `doc
 ```yaml
 services:
   mikrotik-backup:
-    image: ghcr.io/thekoma/mikrotik-backup/app:v2024.11.10  # Replace with desired version
+    image: ghcr.io/thekoma/mikrotik-backup/app:v2024.11.11  # Replace with desired version
     # ... rest of the configuration
 ```
 
@@ -47,7 +47,7 @@ For Kubernetes deployments, a Helm Chart is available as an OCI artifact. You ca
 helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts --version <version>
 ```
 
-For example, to install version 2024.11.10:
+For example, to install version 2024.11.11:
 ```bash
 helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts/mikrotik-backup --version v2024.11.6
 ```
