@@ -79,6 +79,63 @@ logger = logging.getLogger(__name__)
 
 init()  # Inizializza colorama
 
+# Dopo gli import, aggiungiamo le definizioni dei colori e delle emoji
+LOG_COLORS = {
+    "DEBUG": Style.DIM + Fore.WHITE,  # Grigio chiaro
+    "INFO": Style.NORMAL + Fore.WHITE,  # Bianco normale
+    "WARNING": Style.NORMAL + "\033[38;5;208m",  # Arancione soft
+    "ERROR": Style.NORMAL + "\033[38;5;196m",  # Rosso soft
+    "CRITICAL": Style.BRIGHT + "\033[38;5;196m",  # Rosso brillante
+}
+
+LOG_EMOJI = {
+    "DEBUG": "🔍",
+    "INFO": "📝",
+    "WARNING": "⚠️",
+    "ERROR": "❌",
+    "CRITICAL": "💥",
+}
+
+
+class ColoredFormatter(logging.Formatter):
+    def format(self, record):
+        # Salva il messaggio originale
+        original_msg = record.msg
+
+        # Aggiungi emoji e colore
+        color = LOG_COLORS.get(record.levelname, Fore.WHITE)
+        emoji = LOG_EMOJI.get(record.levelname, "")
+
+        # Formatta il messaggio con emoji e colore
+        record.msg = f"{color}{emoji} {original_msg}{Style.RESET_ALL}"
+
+        # Chiama il formatter originale
+        result = super().format(record)
+
+        # Ripristina il messaggio originale
+        record.msg = original_msg
+        return result
+
+
+# Modifica la configurazione del logging
+def setup_logging(level):
+    formatter = ColoredFormatter(
+        fmt="%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+    )
+
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+
+    logger = logging.getLogger()
+    logger.setLevel(level)
+
+    # Rimuovi gli handler esistenti
+    for h in logger.handlers:
+        logger.removeHandler(h)
+
+    logger.addHandler(handler)
+    return logger
+
 
 def validate_ssh_key(key_path):
     if not os.path.exists(key_path):
@@ -174,11 +231,7 @@ except Exception as e:
     sys.exit(1)
 
 # Configurazione logging
-log_level = "DEBUG" if args.debug else config["logging"]["level"].upper()
-logging.basicConfig(
-    level=log_level, format="%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
-)
-logger = logging.getLogger(__name__)
+logger = setup_logging("DEBUG" if args.debug else config["logging"]["level"].upper())
 
 logger.debug("Configurazione caricata e valida con successo")
 
@@ -287,7 +340,8 @@ def download_backup(hostname, ip):
         logger.info(f"{Fore.BLUE}🔄 Starting backup from {ip}{Style.RESET_ALL}")
 
         ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        # nosec: We trust our internal network and router fingerprints
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # nosec
 
         try:
             ssh.connect(

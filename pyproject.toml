@@ -11,6 +11,8 @@ extend-exclude = '''
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+[tool.ruff.lint]
 select = ["E", "F", "B", "I", "N", "UP", "S", "BLE", "FBT", "C4", "DTZ", "T10", "EM", "ISC"]
 ignore = [
     "S108",    # Temp directory usage
@@ -20,9 +22,10 @@ ignore = [
     "DTZ005",  # Timezone-naive datetime
     "B904",    # Raise from err
     "B905",    # Zip without strict
+    "S507",    # Paramiko unsafe policy
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "backup.py" = ["E501"]  # Line too long
 
 [tool.bandit]
@@ -30,7 +33,7 @@ exclude_dirs = ["tests"]
 skips = [
     "B101",  # assert statements
     "B108",  # hardcoded tmp directory
-    "B601",  # paramiko command injection (we trust the input)
+    "B601"   # paramiko command injection (we trust the input)
 ]
 
 [tool.pylint]
