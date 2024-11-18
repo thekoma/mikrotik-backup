@@ -1,4 +1,4 @@
-{{- if eq .Values.mode "cronjob" }}
+{{- if eq .Values.deploymentMode "cronjob" }}
 {{- range .Values.backup.times }}
 {{- $time := . }}
 apiVersion: batch/v1
@@ -18,23 +18,57 @@ spec:
             - name: {{ $.Chart.Name }}
               image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
               imagePullPolicy: {{ $.Values.image.pullPolicy }}
+              command: ["python"]
               args:
-                - "python"
                 - "/app/backup.py"
                 - "--jobs"
-                - {{ $.Values.backup.jobs | quote }}
+                - "{{ $.Values.backup.jobs }}"
                 - "--key"
-                - "/mikrotik-rsa"
+                - "{{ $.Values.ssh.keyPath }}"
               env:
                 - name: TZ
                   value: {{ $.Values.timezone }}
+                {{- if $.Values.storage.existingSecret }}
+                - name: MIKROTIK_S3_TYPE
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $.Values.storage.existingSecret }}
+                      key: s3-type
+                - name: MIKROTIK_S3_BUCKET
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $.Values.storage.existingSecret }}
+                      key: s3-bucket
+                - name: MIKROTIK_S3_ENDPOINT
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $.Values.storage.existingSecret }}
+                      key: s3-endpoint
+                - name: MIKROTIK_S3_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $.Values.storage.existingSecret }}
+                      key: access-key
+                - name: MIKROTIK_S3_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $.Values.storage.existingSecret }}
+                      key: secret-key
+                {{- end }}
+                {{- if $.Values.ssh.existingSecret }}
+                - name: MIKROTIK_SSH_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $.Values.ssh.existingSecret }}
+                      key: username
+                {{- end }}
               volumeMounts:
                 - name: config
-                  mountPath: /app/config.toml
+                  mountPath: /etc/mikrotik_backup.toml
                   subPath: config.toml
                 - name: ssh-key
-                  mountPath: /mikrotik-rsa
-                  subPath: mikrotik-rsa
+                  mountPath: {{ $.Values.ssh.keyPath }}
+                  subPath: ssh-key
               resources:
                 {{- toYaml $.Values.resources | nindent 16 }}
           volumes:
@@ -48,4 +82,4 @@ spec:
           restartPolicy: OnFailure
 ---
 {{- end }}
-{{- end }} 
+{{- end }}

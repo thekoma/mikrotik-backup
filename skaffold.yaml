@@ -1,0 +1,59 @@
+apiVersion: skaffold/v4beta7
+kind: Config
+metadata:
+  name: mikrotik-backup
+build:
+  artifacts:
+    - image: ghcr.io/thekoma/mikrotik-backup/app
+      context: .
+      docker:
+        dockerfile: Dockerfile
+        cacheFrom:
+          - ghcr.io/thekoma/mikrotik-backup/app:latest
+        buildArgs:
+          BUILDKIT_INLINE_CACHE: "1"
+  local:
+    useBuildkit: true
+    concurrency: 0  # Usa tutti i core disponibili
+deploy:
+  helm:
+    releases:
+      - name: mikrotik-backup
+        chartPath: charts/mikrotik-backup
+        valuesFiles:
+          - values-daemon.yaml
+        namespace: mikrotik
+        createNamespace: true
+profiles:
+  - name: dev
+    build:
+      tagPolicy:
+        sha256: {}
+      local:
+        useBuildkit: true
+    deploy:
+      helm:
+        releases:
+          - name: mikrotik-backup
+            chartPath: charts/mikrotik-backup
+            valuesFiles:
+              - values-with-existing-secret.yaml
+            namespace: mikrotik
+            createNamespace: true
+            setValues:
+              image.pullPolicy: IfNotPresent
+  - name: prod
+    build:
+      tagPolicy:
+        gitCommit: {}
+    deploy:
+      helm:
+        releases:
+          - name: mikrotik-backup
+            chartPath: charts/mikrotik-backup
+            valuesFiles:
+              - values-all-in-one.yaml
+            namespace: mikrotik
+            createNamespace: true
+            setValues:
+              image.pullPolicy: Always

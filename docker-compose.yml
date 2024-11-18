@@ -1,11 +1,11 @@
 services:
   mikrotik-backup:
-    image: ghcr.io/thekoma/mikrotik-backup/app:v2024.11.10
+    image: ghcr.io/thekoma/mikrotik-backup/app:latest
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ./config.toml:/app/config.toml:ro
+      - ./config.toml:/etc/mikrotik_backup.toml:ro
       - ./mikrotik-rsa:/mikrotik-rsa:ro
     environment:
       - TZ=Europe/Rome

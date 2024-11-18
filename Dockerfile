@@ -2,7 +2,7 @@ FROM python:3.13-slim
 
 # Install required system packages and clean up in one layer
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends openssh-client && \
+    apt-get install -y --no-install-recommends openssh-client bash && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

@@ -24,3 +24,4 @@ existing-secret.yaml
 *.key
 *.pem
 *.rsa
+values-daemon.yaml

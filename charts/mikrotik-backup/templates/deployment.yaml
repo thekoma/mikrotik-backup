@@ -1,3 +1,4 @@
+{{- if eq .Values.deploymentMode "daemon" }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -33,6 +34,22 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["python"]
+          args:
+            - "/app/backup.py"
+            - "--mode"
+            - "daemon"
+            - "--times"
+            {{- range .Values.backup.times }}
+            - "{{ . }}"
+            {{- end }}
+            - "--jobs"
+            - "{{ .Values.backup.jobs }}"
+            - "--key"
+            - "{{ .Values.ssh.keyPath }}"
+            {{- if .Values.backup.executeOnStart }}
+            - "--onstart"
+            {{- end }}
           volumeMounts:
             - name: config
               mountPath: /etc/mikrotik_backup.toml
@@ -43,16 +60,31 @@ spec:
           env:
             - name: TZ
               value: {{ .Values.timezone }}
-            {{- if .Values.storage.credentials.existingSecret }}
+            {{- if .Values.storage.existingSecret }}
+            - name: MIKROTIK_S3_TYPE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.storage.existingSecret }}
+                  key: s3-type
+            - name: MIKROTIK_S3_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.storage.existingSecret }}
+                  key: s3-bucket
+            - name: MIKROTIK_S3_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.storage.existingSecret }}
+                  key: s3-endpoint
             - name: MIKROTIK_S3_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.storage.credentials.existingSecret }}
+                  name: {{ .Values.storage.existingSecret }}
                   key: access-key
             - name: MIKROTIK_S3_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.storage.credentials.existingSecret }}
+                  name: {{ .Values.storage.existingSecret }}
                   key: secret-key
             {{- end }}
             {{- if .Values.ssh.existingSecret }}
@@ -61,13 +93,7 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.ssh.existingSecret }}
                   key: username
-            - name: MIKROTIK_SSH_KEY_PATH
-              value: {{ .Values.ssh.keyPath }}
             {{- end }}
-            - name: MIKROTIK_S3_BUCKET
-              value: {{ .Values.storage.bucket }}
-            - name: MIKROTIK_S3_ENDPOINT
-              value: {{ .Values.storage.endpoint }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
@@ -90,3 +116,4 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+{{- end }}

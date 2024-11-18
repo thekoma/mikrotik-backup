@@ -23,10 +23,6 @@ key_path = "/root/.ssh/mikrotik_rsa"
 [backup]
 # Directory locale temporanea per i backup (default: "/tmp/mikrotik_backups")
 local_dir = "/tmp/mikrotik_backups"
-# Nome del file di backup binario sul router (default: "backup.rsc")
-filename = "backup.rsc"
-# Formato dell'export della configurazione: "plain" o "json" (default: "plain")
-format = "plain"
 # Numero di job paralleli (default: 2 * CPU cores)
 jobs = 4
 

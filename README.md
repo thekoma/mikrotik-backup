@@ -1,217 +1,266 @@
-# Helm Chart for Mikrotik Backup
+# Mikrotik Backup Solution
 
-This chart deploys a Mikrotik backup solution on Kubernetes. It offers flexibility and various deployment options to suit different scenarios.
+A complete solution for automated backup of Mikrotik devices with S3-compatible storage support.
 
-## Introduction 🚀
+## 🚀 Features
 
-This project provides a Python script to automate backups of Mikrotik devices and store them securely on an S3-compatible bucket (like Wasabi, AWS S3, etc.). It supports scheduled backups via cron jobs, continuous execution as a daemon, and manual backups.
+- **Multiple Modes**: Support for daemon and cronjob modes
+- **Parallel Backups**: Simultaneous backup execution from multiple routers
+- **S3 Storage**: Support for any S3-compatible storage (Wasabi, AWS S3, etc.)
+- **Retention Management**: Configurable retention policy for daily, monthly, and yearly backups
+- **Security**: Support for existing secrets or inline configuration
+- **Flexibility**: Configuration via values or environment variables
 
-## Features ✨
+## 📋 Requirements
 
-* **Multiple Backups:** Backs up multiple Mikrotik routers in parallel.
-* **S3 Storage:** Stores backups on an S3-compatible bucket.
-* **Backup Rotation:** Manages the rotation of daily, monthly, and yearly backups.
-* **Backup Formats:** Supports backups in plain text (`plain`) or JSON (`json`) format.
-* **Daemon Mode:** Runs continuously as a daemon with configurable schedules.
-* **CronJob Mode:** Runs backups based on a cron schedule.
-* **Binary Backup:** Downloads the binary `.backup` file from the router.
-* **Flexibility:** Configuration via TOML file or environment variables.
-* **Detailed Logging:** For monitoring and troubleshooting.
-* **Deployment:** Supports Docker Compose, Helm Chart for Kubernetes, and Systemd Timer.
+- Kubernetes 1.16+
+- Helm 3.0+
+- An S3-compatible bucket
+- SSH access to Mikrotik routers
 
-## Deployment Options ⚙️
+## 🛠️ Installation
 
-### 1. Docker Compose
+### Using Existing Secrets
 
-The simplest way to run the script is using Docker Compose. The image will be pulled from GitHub Container Registry:
+1. Create the credentials secret:
 
-```bash
-docker-compose up -d
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mikrotik-existing-credentials
+type: Opaque
+stringData:
+  s3-type: "wasabi"
+  s3-bucket: "your-bucket"
+  s3-endpoint: "https://s3.wasabisys.com"
+  access-key: "your-access-key"
+  secret-key: "your-secret-key"
+  username: "backup-user"
+  ssh-key: |
+    -----BEGIN OPENSSH PRIVATE KEY-----
+    your-ssh-private-key
+    -----END OPENSSH PRIVATE KEY-----
 ```
 
-By default, it uses the `latest` tag, but you can specify a version in your `docker-compose.yml`:
+2. Install the chart:
 
+```bash
+helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts \
+  -f values-with-existing-secret.yaml
+```
+
+### All-in-One Configuration
+
+For test or development environments, you can use the all-in-one configuration:
+
+```bash
+helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts \
+  -f values-all-in-one.yaml
+```
+
+### Using Docker Compose
+
+1. Prepare configuration files:
+
+```bash
+# Create configuration file
+cp config.example.toml config.toml
+# Edit file with your parameters
+nano config.toml
+
+# Generate SSH key for authentication
+ssh-keygen -t ed25519 -f mikrotik-rsa -C "backup@mikrotik"
+```
+
+2. Start the container:
+
+```bash
+docker compose up -d
+```
+
+#### Docker Compose Configuration
+
+The service can be configured in two ways:
+
+1. **Using config.toml** (recommended):
 ```yaml
 services:
   mikrotik-backup:
-    image: ghcr.io/thekoma/mikrotik-backup/app:v2024.11.10  # Replace with desired version
-    # ... rest of the configuration
+    image: ghcr.io/thekoma/mikrotik-backup/app:latest
+    volumes:
+      - ./config.toml:/etc/mikrotik_backup.toml:ro
+      - ./mikrotik-rsa:/mikrotik-rsa:ro
+    environment:
+      - TZ=Europe/Rome
 ```
 
-### 2. Helm Chart for Kubernetes
-
-For Kubernetes deployments, a Helm Chart is available as an OCI artifact. You can install it directly from GitHub Container Registry:
-
-```bash
-# Add the repository
-helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts --version <version>
-```
-
-For example, to install version 2024.11.10:
-```bash
-helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts/mikrotik-backup --version v2024.11.6
-```
-
-> **Note**: The version follows the format `YYYY.MM.RELEASE` where:
-> - `YYYY`: Current year
-> - `MM`: Current month
-> - `RELEASE`: Release number for the current month (starting from 0)
-
-The container image is automatically pulled from `ghcr.io/thekoma/mikrotik-backup/app` with the matching version tag.
-
-#### Configuration via `values.yaml`
-
-The `values.yaml` file allows customization of the Helm Chart. Here's a breakdown of the parameters:
-
+2. **Using environment variables**:
 ```yaml
-# Application-specific configuration
-deploymentMode: "cronjob" # "daemon" or "cronjob"
+services:
+  mikrotik-backup:
+    image: ghcr.io/thekoma/mikrotik-backup/app:latest
+    volumes:
+      - ./mikrotik-rsa:/mikrotik-rsa:ro
+    environment:
+      - TZ=Europe/Rome
+      - MIKROTIK_SSH_USER=backupper
+      - MIKROTIK_S3_TYPE=wasabi
+      - MIKROTIK_S3_BUCKET=mikrotik-bck
+      - MIKROTIK_S3_ENDPOINT=https://s3.wasabisys.com
+      - MIKROTIK_S3_ACCESS_KEY=your-access-key
+      - MIKROTIK_S3_SECRET_KEY=your-secret-key
+```
 
-# Backup configuration
+#### Docker Compose Parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `volumes` | Mount configuration files and SSH key |
+| `environment` | Configure timezone and configuration overrides |
+| `command` | Customize execution parameters |
+| `restart` | Container restart policy |
+
+#### Supported Environment Variables
+
+| Variable | Description | Default |
+|-----------|-------------|---------|
+| `MIKROTIK_SSH_USER` | SSH Username | `backupper` |
+| `MIKROTIK_S3_TYPE` | S3 storage type | `wasabi` |
+| `MIKROTIK_S3_BUCKET` | Bucket name | - |
+| `MIKROTIK_S3_ENDPOINT` | S3 endpoint | - |
+| `MIKROTIK_S3_ACCESS_KEY` | S3 access key | - |
+| `MIKROTIK_S3_SECRET_KEY` | S3 secret key | - |
+| `TZ` | Timezone | `UTC` |
+
+## ⚙️ Configuration
+
+### Deployment Modes
+
+#### Daemon Mode
+```yaml
+deploymentMode: "daemon"
 backup:
-  times: ["02:00", "10:00", "18:00"] # Times to run backup in daemon mode (24h format)
-  jobs: 4 # Number of parallel backup jobs
-  format: "plain"  # or "json"
-  localDir: "/tmp/mikrotik_backups" # Local directory for temporary backup storage
+  times: ["02:00", "10:00", "18:00"]
+  executeOnStart: true
+```
 
-# SSH configuration
-ssh:
-  username: "backup" # SSH username
-  keyPath: "/mikrotik-rsa" # Path to the SSH private key within the container
-  existingSecret: "" # Name of an existing secret containing the SSH key (optional)
-  secretKey: "ssh-private-key" # Key within the secret where the SSH private key is stored
-  key: "" # Base64 encoded SSH private key (used if existingSecret is empty)
+#### CronJob Mode
+```yaml
+deploymentMode: "cronjob"
+backup:
+  times: ["02:00", "10:00", "18:00"]
+```
 
-# Storage configuration (S3-compatible)
+### Storage Configuration
+
+#### With Existing Secret
+```yaml
 storage:
-  type: "wasabi" # Type of S3 storage (e.g., "wasabi", "s3")
-  bucket: "mikrotik-bck" # Bucket name
-  endpoint: "https://s3.wasabisys.com" # Endpoint URL
-  credentials:
-    existingSecret: "" # Name of existing secret for credentials (optional)
-    accessKeyKey: "access-key" # Key for access key in secret
-    secretKeyKey: "secret-key" # Key for secret key in secret
-    accessKey: "" # Access key (used if existingSecret is empty)
-    secretKey: "" # Secret key (used if existingSecret is empty)
+  existingSecret: "mikrotik-existing-credentials"
+```
 
-# Device configuration
-devices:
-  routers: []  # List of router IPs
+#### Inline Configuration
+```yaml
+storage:
+  type: "wasabi"
+  bucket: "mikrotik-bck"
+  endpoint: "https://s3.wasabisys.com"
+  s3Credentials:
+    accessKey: "your-access-key"
+    secretKey: "your-secret-key"
+```
 
-# Retention configuration
+### SSH Configuration
+
+#### With Existing Secret
+```yaml
+ssh:
+  keyPath: "/mikrotik-rsa"
+  existingSecret: "mikrotik-existing-credentials"
+```
+
+#### Inline Configuration
+```yaml
+ssh:
+  username: "backupper"
+  keyPath: "/mikrotik-rsa"
+  key: |
+    -----BEGIN OPENSSH PRIVATE KEY-----
+    your-ssh-private-key
+    -----END OPENSSH PRIVATE KEY-----
+```
+
+### Retention Policy
+```yaml
 retention:
-  daily: 30 # Number of daily backups to keep
-  monthly: 12 # Number of monthly backups to keep
-  yearly: 5 # Number of yearly backups to keep
-
-# Timezone configuration
-timezone: "Europe/Rome"
-
-# ... other Kubernetes-related configurations ...
+  daily: 30    # Keep 30 daily backups
+  monthly: 12  # Keep 12 monthly backups
+  yearly: 5    # Keep 5 yearly backups
 ```
 
-### 3. Systemd Timer
+## 🔒 Security
 
-For deployments on a traditional Linux server, you can use a Systemd timer. Create a service file and a timer file.
+### Best Practices
 
-**Service file (`/etc/systemd/system/mikrotik-backup.service`):**
+1. **Secrets**: Always use existing secrets in production
+2. **SSH**: Use a dedicated SSH key with minimal permissions
+3. **S3**: Create a dedicated IAM user with access only to the required bucket
+4. **Network**: Limit network access to only necessary routers
 
-```ini
-[Unit]
-Description=Mikrotik Backup Service
+### Mikrotik Router Configuration
 
-[Service]
-ExecStart=/usr/bin/python3 /path/to/backup.py # Replace with the actual path
-User=root  # Specify the correct user
-WorkingDirectory=/path/to/script  # Specify the working directory
-
-[Install]
-WantedBy=multi-user.target
+1. Create a dedicated group:
+```routeros
+/user group add name=backup policy=read,test
 ```
 
-**Timer file (`/etc/systemd/system/mikrotik-backup.timer`):**
-
-```ini
-[Unit]
-Description=Mikrotik Backup Timer
-
-[Timer]
-OnCalendar=*-*-* 02:00:00  # Backup time
-Persistent=true
-
-[Install]
-WantedBy=timers.target
+2. Create a dedicated user:
+```routeros
+/user add name=backupper group=backup
 ```
 
-Enable and start the service and timer:
-
-```bash
-systemctl enable mikrotik-backup.timer
-systemctl start mikrotik-backup.timer
+3. Import SSH key:
+```routeros
+/user ssh-keys import public-key-file=mikrotik.pub user=backupper
 ```
 
-## Configuration 📝
+## 🔍 Troubleshooting
 
-The script uses a `config.toml` file for configuration. An example is available in `config.example.toml`. The default location is `/etc/mikrotik_backup.toml`, but can be overridden with the `-f` or `--config` command-line option.
+### Common Issues
 
-### `config.toml` Structure
+1. **SSH Connection Failed**
+   - Verify SSH key is correct
+   - Check user permissions on router
+   - Verify network connectivity
 
-```toml
-[storage]
-type = "wasabi" # Storage type (optional)
-bucket = "your-bucket-name"
-endpoint = "your-endpoint-url"
-access_key = "YOUR_ACCESS_KEY"
-secret_key = "YOUR_SECRET_KEY"
+2. **S3 Upload Failed**
+   - Verify S3 credentials
+   - Check bucket permissions
+   - Verify S3 endpoint
 
-[devices]
-routers = ["192.168.1.1", "192.168.1.2"] # List of router IPs
+3. **Pod Crashes**
+   - Check logs: `kubectl logs -n mikrotik deployment/mikrotik-backup`
+   - Verify configuration in ConfigMap
+   - Check available resources
 
-[ssh]
-username = "backup-user" # SSH username
-key_path = "/path/to/your/ssh/key" # Path to the SSH private key
+## 📊 Monitoring
 
-[backup]
-local_dir = "/tmp/mikrotik-backups" # Local directory for temporary backups
-filename = "backup.rsc" # Binary backup filename on the router
-format = "plain" # Backup format: "plain" or "json"
-jobs = 4 # Number of parallel jobs
+The backup provides detailed logging and statistics:
+- Number of completed/failed backups
+- Backup sizes
+- Execution times
+- Retention policy status
 
-[retention]
-daily = 30 # Number of daily backups to retain
-monthly = 12 # Number of monthly backups to retain
-yearly = 5 # Number of yearly backups to retain
+## 🤝 Contributing
 
-[logging]
-level = "info" # Logging level: "debug", "info", "warning", "error"
-```
+Contributions are welcome! Please:
+1. Fork the repository
+2. Create a branch for your changes
+3. Submit a Pull Request
 
-## Creating a Backup User in RouterOS
+## 📝 License
 
-1. **SSH into your Mikrotik router.**
-2. **Create a new user:** `/user add name=backup group=read password=<your-password>` (replace `<your-password>` with a strong password).
-3. **Add the user to the `system` group:** `/user group add name=system user=backup`
-4. **Verify the user's groups:** `/user print detail where name=backup`
+MIT License
 
-## Command-line Options ⌨️
-
-| Option         | Description                                                                                           |
-|-----------------|-------------------------------------------------------------------------------------------------------|
-| `-f`, `--config`| Path to the configuration file (default: `/etc/mikrotik_backup.toml`).                              |
-| `-d`, `--debug` | Enables debug logging.                                                                               |
-| `-m`, `--mode` | Run mode: `once` (default) or `daemon`.                                                              |
-| `-t`, `--times`| Times to run backup in daemon mode (24h format, space-separated. Example: "02:00 14:00").            |
-| `-k`, `--key`  | Overrides the SSH key path from the configuration file.                                               |
-| `-j`, `--jobs`  | Number of parallel jobs (default: from config or 2 * CPU cores).                                     |
-
-## Contributions 🤝
-
-Contributions are welcome! Open an issue or a pull request.
-
-## License 📜
-
-This project is released under the MIT License.
-
-## Acknowledgments 🙏
-
-Thanks to all contributors and maintainers of this project.
+*For Italian documentation, see [README.it_IT.md](README.it_IT.md)*

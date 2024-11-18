@@ -1,33 +1,34 @@
 # Application-specific configuration
 deploymentMode: "cronjob" # "daemon" or "cronjob"
 
+# Logging configuration
+logging:
+  level: "info"  # Possible values: debug, info, warning, error
+
 # Backup configuration
 backup:
   times: ["02:00", "10:00", "18:00"]
   jobs: 4
   format: "plain"  # or "json"
   localDir: "/tmp/mikrotik_backups"
+  executeOnStart: true  # Execute a backup when the daemon starts
 
 # SSH configuration
 ssh:
-  username: "backup"
+  username: "backupper"
   keyPath: "/mikrotik-rsa"
-  # Existing secret containing SSH credentials
-  existingSecret: ""
-  # Direct credentials (ignored if existingSecret is set)
-  key: ""
+  existingSecret: ""  # Name of existing secret containing SSH credentials
+  key: ""  # SSH private key (used if existingSecret is empty)
 
 # Storage configuration (S3-compatible)
 storage:
-  type: "wasabi"
-  bucket: "mikrotik-bck"
-  endpoint: "https://s3.wasabisys.com"
-  credentials:
-    # Existing secret containing S3 credentials
-    existingSecret: ""
-    # Direct credentials (ignored if existingSecret is set)
-    accessKey: ""
-    secretKey: ""
+  type: ""      # wasabi, s3, etc
+  bucket: ""    # bucket name
+  endpoint: ""  # endpoint URL
+  existingSecret: ""  # Name of existing secret containing S3 credentials
+  s3Credentials:
+    accessKey: "" # access key
+    secretKey: "" # secret key
 
 # Device configuration
 devices:
