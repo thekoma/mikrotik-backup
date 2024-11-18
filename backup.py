@@ -15,6 +15,7 @@ import sys
 import schedule
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import re
 
 # Inizializza l'parser degli argomenti
 parser = argparse.ArgumentParser(description='MikroTik Backup Tool')
@@ -92,14 +93,28 @@ logger.debug(f"Il file esiste? {os.path.exists(args.config)}")
 logger.debug(f"Path assoluto: {os.path.abspath(args.config)}")
 logger.debug(f"Directory corrente: {os.getcwd()}")
 
+# Funzione per espandere le variabili d'ambiente nel contenuto del file
+def expand_env_vars(config_str):
+    """Expand environment variables in config string."""
+    import os
+    import re
+    
+    def replace_env_var(match):
+        env_var = match.group(1)
+        return os.environ.get(env_var, '')
+    
+    return re.sub(r'\${(\w+)}', replace_env_var, config_str)
+
 # Carica e valida la configurazione
 try:
     logger.debug(f"Permessi file: {oct(os.stat(args.config).st_mode)[-3:]}")
     logger.debug(f"Proprietario: {os.stat(args.config).st_uid}")
     
     with open(args.config, "rb") as f:
-        logger.debug("File aperto con successo")
-        config = tomli.load(f)
+        config_str = f.read().decode()
+        # Espandi le variabili d'ambiente nel contenuto del file
+        config_str = expand_env_vars(config_str)
+        config = tomli.loads(config_str)
         logger.debug("File caricato con tomli")
     
     # Merge con i default
