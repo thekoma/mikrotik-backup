@@ -1,5 +1,7 @@
 # Mikrotik Backup Solution
 
+*For English documentation, see [README.md](README.md)*
+
 Una soluzione completa per il backup automatizzato di dispositivi Mikrotik con supporto per storage S3-compatible.
 
 ## 🚀 Caratteristiche

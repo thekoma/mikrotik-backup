@@ -112,40 +112,20 @@ jobs:
           registry_password: ${{ secrets.GITHUB_TOKEN }}
           update_dependencies: 'true'
 
-      - name: Update Version References
+      - name: Generate Release Notes and Update Docs
         if: success()
         run: |
           # Remove 'v' prefix for version number
           VERSION_WITHOUT_V="${VERSION#v}"
-          
-          # Update README.md
-          sed -i "s/\(image: ghcr\.io\/thekoma\/mikrotik-backup\/app:\)v[0-9]\{4\}\.[0-9]\{2\}\.[0-9]\+/\1${VERSION}/g" README.md
-          sed -i "s/\(version \)[0-9]\{4\}\.[0-9]\{2\}\.[0-9]\+/\1${VERSION_WITHOUT_V}/g" README.md
-          
-          # Update docker-compose.yml
-          sed -i "s/\(image: ghcr\.io\/thekoma\/mikrotik-backup\/app:\)v[0-9]\{4\}\.[0-9]\{2\}\.[0-9]\+/\1${VERSION}/g" docker-compose.yml
 
-      - name: Commit Version Updates
-        if: success()
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add README.md docker-compose.yml
-          git commit -m "docs: update version references to ${{ env.VERSION }}" || echo "No changes to commit"
-          git push
-
-      - name: Generate Release Notes
-        if: success()
-        run: |
-          # Remove 'v' prefix for version number
-          VERSION_WITHOUT_V="${VERSION#v}"
+          # Create release notes
           cat << EOF > release_notes.md
           ## 🚀 Release ${{ env.VERSION }}
 
           ### 📦 Container Images
           The following multi-architecture container images are available:
-          - \`ghcr.io/thekoma/mikrotik-backup/app:${VERSION_WITHOUT_V}\` (recommended for production)
-          - \`ghcr.io/thekoma/mikrotik-backup/app:latest\` (latest version)
+          - \`ghcr.io/thekoma/mikrotik-backup/app:${VERSION_WITHOUT_V}\`
+          - \`ghcr.io/thekoma/mikrotik-backup/app:latest\`
 
           Supported architectures:
           - linux/amd64 (Intel/AMD 64-bit)
@@ -159,7 +139,7 @@ jobs:
             mikrotik-backup:
               image: ghcr.io/thekoma/mikrotik-backup/app:${VERSION_WITHOUT_V}
               volumes:
-                - ./config.toml:/app/config.toml:ro
+                - ./config.toml:/etc/mikrotik_backup.toml:ro
                 - ./mikrotik-rsa:/mikrotik-rsa:ro
               environment:
                 - TZ=Europe/Rome
@@ -167,33 +147,41 @@ jobs:
 
           #### Kubernetes with Helm
           \`\`\`bash
-          # Install using Helm
           helm install mikrotik-backup oci://ghcr.io/thekoma/mikrotik-backup/charts --version ${VERSION_WITHOUT_V}
-          \`\`\`
-
-          #### Systemd Service
-          \`\`\`ini
-          [Unit]
-          Description=Mikrotik Backup Service
-
-          [Service]
-          ExecStart=/usr/local/bin/mikrotik-backup
-          User=mikrotik-backup
-          WorkingDirectory=/etc/mikrotik-backup
-
-          [Install]
-          WantedBy=multi-user.target
           \`\`\`
 
           For more detailed installation and configuration instructions, please refer to the [README](https://github.com/thekoma/mikrotik-backup#readme).
           EOF
 
-      - name: Commit README update
+          # Function to update version references in a file
+          update_version_refs() {
+            local file=$1
+            # Update Docker image version
+            sed -i "s|ghcr.io/thekoma/mikrotik-backup/app:v[0-9]\{4\}\.[0-9]\{2\}\.[0-9]\+|ghcr.io/thekoma/mikrotik-backup/app:${VERSION}|g" "$file"
+
+            # Update Helm chart version
+            sed -i "s|version [0-9]\{4\}\.[0-9]\{2\}\.[0-9]\+|version ${VERSION_WITHOUT_V}|g" "$file"
+
+            # Update version in installation examples
+            sed -i "s|--version [0-9]\{4\}\.[0-9]\{2\}\.[0-9]\+|--version ${VERSION_WITHOUT_V}|g" "$file"
+
+            # Update version in docker-compose examples
+            sed -i "s|app:v[0-9]\{4\}\.[0-9]\{2\}\.[0-9]\+|app:${VERSION}|g" "$file"
+          }
+
+          # Update both README files
+          update_version_refs "README.md"
+          update_version_refs "README.it_IT.md"
+
+          # Update docker-compose.yml
+          update_version_refs "docker-compose.yml"
+
+      - name: Commit Documentation Updates
         if: success()
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add README.md
+          git add README.md README.it_IT.md docker-compose.yml
           git commit -m "docs: update version references to ${{ env.VERSION }}" || echo "No changes to commit"
           git push
 
