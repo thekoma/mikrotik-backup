@@ -3,5 +3,5 @@ black==23.11.0
 isort==5.12.0
 bandit==1.7.5
 ruff==0.1.6
-detect-secrets==1.4.0
+detect-secrets==1.5.0
 pylint==3.0.2
