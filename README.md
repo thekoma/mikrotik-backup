@@ -87,7 +87,7 @@ The service can be configured in two ways:
 ```yaml
 services:
   mikrotik-backup:
-    image: ghcr.io/thekoma/mikrotik-backup/app:v2025.02.2
+    image: ghcr.io/thekoma/mikrotik-backup/app:v2025.02.3
     volumes:
       - ./config.toml:/etc/mikrotik_backup.toml:ro
       - ./mikrotik-rsa:/mikrotik-rsa:ro
