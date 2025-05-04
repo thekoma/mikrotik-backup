@@ -4,4 +4,4 @@ isort==6.0.1
 bandit==1.8.3
 ruff==0.11.8
 detect-secrets==1.5.0
-pylint==3.3.6
+pylint==3.3.7
