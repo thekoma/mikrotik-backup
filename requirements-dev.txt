@@ -2,6 +2,6 @@ pre-commit==4.2.0
 black==25.1.0
 isort==6.0.1
 bandit==1.8.3
-ruff==0.11.10
+ruff==0.11.11
 detect-secrets==1.5.0
 pylint==3.3.7
